@@ -1,7 +1,7 @@
 #include "pch.h"
 
 std::wstring buf;
-std::wstring ident;
+std::string ident;
 
 bool convert_from(const wchar_t* str, long long int* value)
 {
@@ -67,8 +67,8 @@ BOOL CALLBACK proc_enumWindows(HWND hwnd, LPARAM lparam)
 				*c = L' ';
 			}
 		}
-		ident.assign(2 * depth, L' ');
-		wprintf(L"%s0x%p\t[%s]\n", ident.c_str(), hwnd, buf.c_str());
+		ident.assign(2 * depth, ' ');
+		printf("%s0x%p\t%S\n", ident.c_str(), hwnd, buf.c_str());
 	}
 
 	EnumChildWindows(hwnd, proc_enumWindows, depth + 1);
