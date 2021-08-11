@@ -80,7 +80,7 @@ BOOL CALLBACK proc_enumWindows(HWND hwnd, LPARAM lparam)
 		ident.assign(2 * depth, L' ');
 		//printf("%s0x%p\t%S\n", ident.c_str(), hwnd, buf.c_str());
 		static bee::wstring outBuf;
-		outBuf.sprintf(L"%s0x%p\t%s\n", ident.c_str(), hwnd, buf.c_str());
+		outBuf.sprintf(L"%s0x%x\t%s\n", ident.c_str(), hwnd, buf.c_str());
 		bee::Writer::Out().Write(outBuf);
 	}
 
