@@ -1,17 +1,27 @@
 #include "pch.h"
 
-std::wstring buf;
-std::string ident;
+#include "../../dirNT/dirNT/beewstring.h"
+#include "../../dirNT/dirNT/Write.h"
+#include "../../dirNT/dirNT/beeLib.h"
+#include "../../dirNT/dirNT/nt.h"
 
-bool convert_from(const wchar_t* str, long long int* value)
+bee::wstring buf;
+bee::wstring ident;
+
+bool convert_from(const wchar_t* str, unsigned long * value)
 {
-	wchar_t* endptr;
-	*value = wcstoll(str, &endptr, 16);
+	int cbLen = lstrlenW(str) * sizeof(WCHAR);
+	nt::UNICODE_STRING ucs;
+	ucs.Length = cbLen;
+	ucs.MaximumLength = cbLen;
+	ucs.Buffer = (PWSTR)str;
 
-	return *endptr == L'\0';
+	nt::RtlUnicodeStringToInteger(&ucs, 16, value);
+
+	return NT_SUCCESS(nt::RtlUnicodeStringToInteger(&ucs, 16, value));
 }
 
-bool get_GetWindowTextW(HWND hwnd, std::wstring* buf)
+bool get_GetWindowTextW(HWND hwnd, bee::wstring* buf)
 {
 	const int textlen = GetWindowTextLengthW(hwnd);
 	if (textlen == 0)
@@ -25,7 +35,7 @@ bool get_GetWindowTextW(HWND hwnd, std::wstring* buf)
 
 	if (textlen == 0)
 	{
-		buf->clear();
+		buf->resize(0);
 	}
 	else
 	{
@@ -44,10 +54,10 @@ bool get_GetWindowTextW(HWND hwnd, std::wstring* buf)
 	return true;
 }
 
-bool get_WM_GETTEXT(HWND hwnd, std::wstring* buf, DWORD maxChars = 255)
+bool get_WM_GETTEXT(HWND hwnd, bee::wstring* buf, DWORD maxChars = 255)
 {
 	buf->resize(maxChars);
-	LRESULT copiedChars = SendMessageW(hwnd, WM_GETTEXT, buf->size(), LPARAM(buf->data()));
+	LRESULT copiedChars = SendMessageW(hwnd, WM_GETTEXT, buf->length(), LPARAM(buf->data()));
 	buf->resize(copiedChars);
 
 	return copiedChars == 0 ? false : true;
@@ -60,15 +70,18 @@ BOOL CALLBACK proc_enumWindows(HWND hwnd, LPARAM lparam)
 	
 	if (get_WM_GETTEXT(hwnd, &buf))
 	{
-		for (auto c = buf.begin(); c != buf.end(); ++c)
+		for (int i = 0; i < buf.length(); ++i)
 		{
-			if (*c == L'\r' || *c == L'\n')
+			if (buf[i] == L'\r' || buf[i] == L'\n')
 			{
-				*c = L' ';
+				buf[i] = L' ';
 			}
 		}
-		ident.assign(2 * depth, ' ');
-		printf("%s0x%p\t%S\n", ident.c_str(), hwnd, buf.c_str());
+		ident.assign(2 * depth, L' ');
+		//printf("%s0x%p\t%S\n", ident.c_str(), hwnd, buf.c_str());
+		static bee::wstring outBuf;
+		outBuf.sprintf(L"%s0x%p\t%s\n", ident.c_str(), hwnd, buf.c_str());
+		bee::Writer::Out().Write(outBuf);
 	}
 
 	EnumChildWindows(hwnd, proc_enumWindows, depth + 1);
@@ -76,20 +89,21 @@ BOOL CALLBACK proc_enumWindows(HWND hwnd, LPARAM lparam)
 	return TRUE;
 }
 
-int wmain(int argc, wchar_t* argv[])
+int beeMain(int argc, wchar_t* argv[])
 {
 	int rc;
-
+	bee::wstring errBuf;
 	if (argc == 1)
 	{
 		rc = EnumWindows(proc_enumWindows, 0) == TRUE ? 0 : 1;
 	}
 	else if (argc == 2)
 	{
-		long long int hwnd; ;
+		unsigned long hwnd; ;
 		if ( !convert_from(argv[1], &hwnd) )
 		{
-			fprintf(stderr, "E: could not convert %S to a hex value\n", argv[1]);
+			errBuf.sprintf(L"E: could not convert %S to a hex value\n", argv[1]);
+			bee::Writer::Out().Write(errBuf);
 			rc = 8;
 		}
 		else
@@ -100,7 +114,8 @@ int wmain(int argc, wchar_t* argv[])
 	else
 	{
 		rc = 4;
-		printf("usage: %S [HWND handle (hex)]\n", argv[0]);
+		errBuf.sprintf(L"usage: %S [HWND handle (hex)]\n", argv[0]);
+		bee::Writer::Out().Write(errBuf);
 	}
 	return rc;
 }
