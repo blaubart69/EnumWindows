@@ -123,6 +123,7 @@
       <EntryPointSymbol>rawmain</EntryPointSymbol>
       <AdditionalDependencies>ntdll.lib;kernel32.lib;user32.lib;shell32.lib;C:\Local\dev\dirNT\dirNT\ntdll_custom.lib</AdditionalDependencies>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <GenerateMapFile>true</GenerateMapFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -166,6 +167,7 @@
       <EntryPointSymbol>rawmain</EntryPointSymbol>
       <AdditionalDependencies>ntdll.lib;kernel32.lib;user32.lib;shell32.lib;C:\Local\dev\dirNT\dirNT\ntdll_custom.lib</AdditionalDependencies>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <GenerateMapFile>true</GenerateMapFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

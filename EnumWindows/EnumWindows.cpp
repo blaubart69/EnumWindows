@@ -103,7 +103,7 @@ int beeMain(int argc, wchar_t* argv[])
 		if ( !convert_from(argv[1], &hwnd) )
 		{
 			errBuf.sprintf(L"E: could not convert %S to a hex value\n", argv[1]);
-			bee::Writer::Out().Write(errBuf);
+			bee::Writer::Err().Write(errBuf);
 			rc = 8;
 		}
 		else
@@ -115,7 +115,7 @@ int beeMain(int argc, wchar_t* argv[])
 	{
 		rc = 4;
 		errBuf.sprintf(L"usage: %S [HWND handle (hex)]\n", argv[0]);
-		bee::Writer::Out().Write(errBuf);
+		bee::Writer::Err().Write(errBuf);
 	}
 	return rc;
 }
