@@ -8,6 +8,18 @@
 bee::wstring buf;
 bee::wstring ident;
 
+void replaceCRLFwithSpace(bee::wstring* str)
+{
+	for (int i = 0; i < str->length(); ++i)
+	{
+		WCHAR& c = (*str)[i];
+		if (c == L'\r' || c == L'\n')
+		{
+			c = L' ';
+		}
+	}
+}
+
 bool convert_from(const wchar_t* str, unsigned long * value)
 {
 	int cbLen = lstrlenW(str) * sizeof(WCHAR);
@@ -16,9 +28,7 @@ bool convert_from(const wchar_t* str, unsigned long * value)
 	ucs.MaximumLength = cbLen;
 	ucs.Buffer = (PWSTR)str;
 
-	nt::RtlUnicodeStringToInteger(&ucs, 16, value);
-
-	return NT_SUCCESS(nt::RtlUnicodeStringToInteger(&ucs, 16, value));
+	return NT_SUCCESS(nt::RtlUnicodeStringToInteger(&ucs, 0, value));
 }
 
 bool get_GetWindowTextW(HWND hwnd, bee::wstring* buf)
@@ -67,20 +77,20 @@ bool get_WM_GETTEXT(HWND hwnd, bee::wstring* buf, DWORD maxChars = 255)
 BOOL CALLBACK proc_enumWindows(HWND hwnd, LPARAM lparam)
 {
 	const int depth = (int)lparam;
-	
+	static bee::wstring outBuf;
+
 	if (get_WM_GETTEXT(hwnd, &buf))
 	{
-		for (int i = 0; i < buf.length(); ++i)
-		{
-			if (buf[i] == L'\r' || buf[i] == L'\n')
-			{
-				buf[i] = L' ';
-			}
-		}
+		replaceCRLFwithSpace(&buf);
 		ident.assign(2 * depth, L' ');
-		//printf("%s0x%p\t%S\n", ident.c_str(), hwnd, buf.c_str());
-		static bee::wstring outBuf;
-		outBuf.sprintf(L"%s0x%x\t%s\n", ident.c_str(), hwnd, buf.c_str());
+		
+		const BOOL visible = IsWindowVisible(hwnd);
+
+		outBuf.sprintf(L"%s0x%x\t%s\t%s\n"
+			, ident.c_str()
+			, hwnd
+			, visible ? L"VISIBLE" : L"HIDDEN"
+			, buf.c_str());
 		bee::Writer::Out().Write(outBuf);
 	}
 
@@ -102,7 +112,7 @@ int beeMain(int argc, wchar_t* argv[])
 		unsigned long hwnd; ;
 		if ( !convert_from(argv[1], &hwnd) )
 		{
-			errBuf.sprintf(L"E: could not convert %S to a hex value\n", argv[1]);
+			errBuf.sprintf(L"E: could not convert %s to a hex value\n", argv[1]);
 			bee::Writer::Err().Write(errBuf);
 			rc = 8;
 		}
@@ -114,7 +124,7 @@ int beeMain(int argc, wchar_t* argv[])
 	else
 	{
 		rc = 4;
-		errBuf.sprintf(L"usage: %S [HWND handle (hex)]\n", argv[0]);
+		errBuf.sprintf(L"usage: %s [HWND (prepend 0x for hex values)]\n", argv[0]);
 		bee::Writer::Err().Write(errBuf);
 	}
 	return rc;
